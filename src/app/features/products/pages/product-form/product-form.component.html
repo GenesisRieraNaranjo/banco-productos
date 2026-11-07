@@ -1,0 +1,668 @@
+<div class="product-form-page">
+
+  <header class="page-header">
+
+    <a class="brand" routerLink="/products">
+
+      <span class="brand-icon" aria-hidden="true">▣</span>
+
+      <span>BANCO</span>
+
+    </a>
+
+  </header>
+
+  <main class="page-content">
+    <div class="form-card">
+
+      <div class="form-heading">
+
+        <h1>
+          {{ isEditMode
+            ? 'Formulario de Edición'
+            : 'Formulario de Registro' }}
+        </h1>
+
+        <p>
+          {{
+            isEditMode
+              ? 'Actualiza los datos del producto financiero'
+              : 'Ingresa los datos del nuevo producto financiero'
+          }}
+        </p>
+
+      </div>
+
+      <div
+        *ngIf="errorMessage"
+        class="alert alert-error"
+        role="alert">
+        {{ errorMessage }}
+      </div>
+
+      
+
+      <div
+        *ngIf="isLoading"
+        class="form-skeleton"
+        role="status"
+        aria-label="Cargando información del producto">
+
+        <div class="form-grid">
+
+          <div
+            *ngFor="let field of [1, 2, 3, 4, 5, 6]"
+            class="form-field">
+
+            <!-- Simula el label -->
+            <div class="skeleton skeleton-label"></div>
+
+            <!-- Simula el input -->
+            <div class="skeleton skeleton-input"></div>
+
+          </div>
+
+        </div>
+
+        <span class="sr-only">
+          Cargando información del producto...
+        </span>
+
+      </div>
+
+      <form
+        *ngIf="!isLoading && !productNotFound"
+        [formGroup]="form"
+        (ngSubmit)="saveProduct()"
+        novalidate>
+
+        <div class="form-grid">
+
+          <div class="form-field">
+            <label for="product-id">ID</label>
+            <input
+              id="product-id"
+              type="text"
+              formControlName="id"
+              placeholder="Ej. trj-crd"
+              maxlength="10"
+              [class.invalid]="isInvalid(idControl)"
+              [attr.aria-invalid]="isInvalid(idControl)"
+            />
+
+            <span
+              class="field-hint"
+              *ngIf="idControl.pending">
+              Verificando disponibilidad...
+            </span>
+
+            <span
+              *ngIf="isEditMode"
+              class="field-hint">
+
+              El identificador del producto no puede modificarse.
+
+            </span>
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(idControl)"
+              role="alert">
+              <span *ngIf="idControl.hasError('required')">
+                El ID es obligatorio.
+              </span>
+              <span *ngIf="idControl.hasError('minlength')">
+                El ID debe tener al menos 3 caracteres.
+              </span>
+              <span *ngIf="idControl.hasError('maxlength')">
+                El ID no puede superar 10 caracteres.
+              </span>
+              <span *ngIf="idControl.hasError('idExists')">
+                Este ID ya se encuentra registrado.
+              </span>
+              <span *ngIf="idControl.hasError('verificationFailed')">
+                No se pudo verificar el ID. Inténtalo nuevamente.
+              </span>
+            </div>
+
+          </div>
+
+        
+
+          <div class="form-field">
+            <label for="product-name">Nombre</label>
+            <input
+              id="product-name"
+              type="text"
+              formControlName="name"
+              placeholder="Ej. Tarjeta de Crédito"
+              maxlength="100"
+              [class.invalid]="isInvalid(nameControl)"
+              [attr.aria-invalid]="isInvalid(nameControl)"
+            />
+            <div
+              class="field-error"
+              *ngIf="isInvalid(nameControl)"
+              role="alert">
+
+              <span *ngIf="nameControl.hasError('required')">
+                El nombre es obligatorio.
+              </span>
+
+              <span *ngIf="nameControl.hasError('minlength')">
+                El nombre debe tener mínimo 5 caracteres.
+              </span>
+
+              <span *ngIf="nameControl.hasError('maxlength')">
+                El nombre no puede superar 100 caracteres.
+              </span>
+
+            </div>
+          </div>
+
+        
+
+          <div class="form-field">
+            <label for="product-description">Descripción</label>
+            <textarea
+              id="product-description"
+              formControlName="description"
+              rows="3"
+              maxlength="200"
+              placeholder="Descripción del producto"
+              [class.invalid]="isInvalid(descriptionControl)"
+              [attr.aria-invalid]="isInvalid(descriptionControl)">
+            </textarea>
+            <div
+
+              class="field-error"
+              *ngIf="isInvalid(descriptionControl)"
+              role="alert">
+              <span *ngIf="descriptionControl.hasError('required')">
+                La descripción es obligatoria.
+              </span>
+
+              <span *ngIf="descriptionControl.hasError('minlength')">
+                La descripción debe tener mínimo 10 caracteres.
+              </span>
+
+              <span *ngIf="descriptionControl.hasError('maxlength')">
+                La descripción no puede superar 200 caracteres.
+              </span>
+
+            </div>
+          </div>
+
+         
+
+          <div class="form-field">
+
+            <label for="product-logo">Logo</label>
+
+            <input
+              id="product-logo"
+              type="text"
+              formControlName="logo"
+              placeholder="URL del logo"
+              [class.invalid]="isInvalid(logoControl)"
+              [attr.aria-invalid]="isInvalid(logoControl)"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(logoControl)"
+              role="alert">
+              El logo es obligatorio.
+            </div>
+
+          </div>
+
+
+          <div class="form-field">
+            <label for="date-release">
+              Fecha de Liberación
+            </label>
+
+            <input
+              id="date-release"
+              type="date"
+              formControlName="date_release"
+              [min]="minReleaseDate"
+              [class.invalid]="isInvalid(releaseControl)"
+              [attr.aria-invalid]="isInvalid(releaseControl)"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(releaseControl)"
+              role="alert">
+
+              <span *ngIf="releaseControl.hasError('required')">
+                La fecha de liberación es obligatoria.
+              </span>
+
+              <span *ngIf="releaseControl.hasError('pastDate')">
+                La fecha no puede ser anterior a hoy.
+              </span>
+
+              <span *ngIf="releaseControl.hasError('invalidDate')">
+                La fecha ingresada no es válida.
+              </span>
+
+            </div>
+
+          </div>
+
+         
+
+          <div class="form-field">
+
+            <label for="date-revision">
+              Fecha de Revisión
+            </label>
+
+            <input
+              id="date-revision"
+              type="date"
+              formControlName="date_revision"
+              [class.invalid]="revisionInvalid"
+              [attr.aria-invalid]="revisionInvalid"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="revisionInvalid"
+              role="alert">
+
+              <span *ngIf="revisionControl.hasError('required')">
+                La fecha de revisión es obligatoria.
+              </span>
+
+              <span *ngIf="form.hasError('invalidRevisionDate')">
+                La fecha de revisión debe ser exactamente
+                un año posterior a la fecha de liberación.
+              </span>
+
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="isSaving"
+            (click)="resetForm()">
+            Reiniciar
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="
+              form.invalid ||
+              form.pending ||
+              isSaving ||
+              isLoading ||
+              productNotFound ||
+              showSuccessDialog
+            ">
+
+            {{
+              isSaving
+                ? 'Guardando...'
+                : isEditMode
+                  ? 'Actualizar'
+                  : 'Agregar'
+            }}
+
+          </button>
+        </div>
+
+        <div class="back-link">
+
+          <a routerLink="/products">
+            Volver al listado
+          </a>
+          
+        </div>
+
+        
+
+      </form>
+
+    </div>
+
+  </main>
+
+
+  <div class="product-form-page">
+
+  <header class="page-header">
+
+    <a class="brand" routerLink="/products">
+
+      <span class="brand-icon" aria-hidden="true">▣</span>
+
+      <span>BANCO</span>
+
+    </a>
+
+  </header>
+
+  <main class="page-content">
+    <div class="form-card">
+
+      <div class="form-heading">
+
+        <h1>
+          {{ isEditMode
+            ? 'Formulario de Edición'
+            : 'Formulario de Registro' }}
+        </h1>
+
+        <p>
+          {{
+            isEditMode
+              ? 'Actualiza los datos del producto financiero'
+              : 'Ingresa los datos del nuevo producto financiero'
+          }}
+        </p>
+
+      </div>
+
+      <div
+        *ngIf="errorMessage"
+        class="alert alert-error"
+        role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <div
+        *ngIf="successMessage"
+        class="alert alert-success"
+        role="status">
+        {{ successMessage }}
+      </div>
+
+      <div *ngIf="isLoading" class="loading">
+        Cargando información del producto...
+      </div>
+
+      <form
+        *ngIf="!isLoading && !productNotFound"
+        [formGroup]="form"
+        (ngSubmit)="saveProduct()"
+        novalidate>
+
+        <div class="form-grid">
+
+          <div class="form-field">
+            <label for="product-id">ID</label>
+            <input
+              id="product-id"
+              type="text"
+              formControlName="id"
+              placeholder="Ej. trj-crd"
+              maxlength="10"
+              [class.invalid]="isInvalid(idControl)"
+              [attr.aria-invalid]="isInvalid(idControl)"
+            />
+
+            <span
+              class="field-hint"
+              *ngIf="idControl.pending">
+              Verificando disponibilidad...
+            </span>
+
+            <span
+              *ngIf="isEditMode"
+              class="field-hint">
+
+              El identificador del producto no puede modificarse.
+
+            </span>
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(idControl)"
+              role="alert">
+              <span *ngIf="idControl.hasError('required')">
+                El ID es obligatorio.
+              </span>
+              <span *ngIf="idControl.hasError('minlength')">
+                El ID debe tener al menos 3 caracteres.
+              </span>
+              <span *ngIf="idControl.hasError('maxlength')">
+                El ID no puede superar 10 caracteres.
+              </span>
+              <span *ngIf="idControl.hasError('idExists')">
+                Este ID ya se encuentra registrado.
+              </span>
+              <span *ngIf="idControl.hasError('verificationFailed')">
+                No se pudo verificar el ID. Inténtalo nuevamente.
+              </span>
+            </div>
+
+          </div>
+
+        
+
+          <div class="form-field">
+            <label for="product-name">Nombre</label>
+            <input
+              id="product-name"
+              type="text"
+              formControlName="name"
+              placeholder="Ej. Tarjeta de Crédito"
+              maxlength="100"
+              [class.invalid]="isInvalid(nameControl)"
+              [attr.aria-invalid]="isInvalid(nameControl)"
+            />
+            <div
+              class="field-error"
+              *ngIf="isInvalid(nameControl)"
+              role="alert">
+
+              <span *ngIf="nameControl.hasError('required')">
+                El nombre es obligatorio.
+              </span>
+
+              <span *ngIf="nameControl.hasError('minlength')">
+                El nombre debe tener mínimo 5 caracteres.
+              </span>
+
+              <span *ngIf="nameControl.hasError('maxlength')">
+                El nombre no puede superar 100 caracteres.
+              </span>
+
+            </div>
+          </div>
+
+        
+
+          <div class="form-field">
+            <label for="product-description">Descripción</label>
+            <textarea
+              id="product-description"
+              formControlName="description"
+              rows="3"
+              maxlength="200"
+              placeholder="Descripción del producto"
+              [class.invalid]="isInvalid(descriptionControl)"
+              [attr.aria-invalid]="isInvalid(descriptionControl)">
+            </textarea>
+            <div
+
+              class="field-error"
+              *ngIf="isInvalid(descriptionControl)"
+              role="alert">
+              <span *ngIf="descriptionControl.hasError('required')">
+                La descripción es obligatoria.
+              </span>
+
+              <span *ngIf="descriptionControl.hasError('minlength')">
+                La descripción debe tener mínimo 10 caracteres.
+              </span>
+
+              <span *ngIf="descriptionControl.hasError('maxlength')">
+                La descripción no puede superar 200 caracteres.
+              </span>
+
+            </div>
+          </div>
+
+         
+
+          <div class="form-field">
+
+            <label for="product-logo">Logo</label>
+
+            <input
+              id="product-logo"
+              type="text"
+              formControlName="logo"
+              placeholder="URL del logo"
+              [class.invalid]="isInvalid(logoControl)"
+              [attr.aria-invalid]="isInvalid(logoControl)"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(logoControl)"
+              role="alert">
+              El logo es obligatorio.
+            </div>
+
+          </div>
+
+
+          <div class="form-field">
+            <label for="date-release">
+              Fecha de Liberación
+            </label>
+
+            <input
+              id="date-release"
+              type="date"
+              formControlName="date_release"
+              [min]="minReleaseDate"
+              [class.invalid]="isInvalid(releaseControl)"
+              [attr.aria-invalid]="isInvalid(releaseControl)"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="isInvalid(releaseControl)"
+              role="alert">
+
+              <span *ngIf="releaseControl.hasError('required')">
+                La fecha de liberación es obligatoria.
+              </span>
+
+              <span *ngIf="releaseControl.hasError('pastDate')">
+                La fecha no puede ser anterior a hoy.
+              </span>
+
+              <span *ngIf="releaseControl.hasError('invalidDate')">
+                La fecha ingresada no es válida.
+              </span>
+
+            </div>
+
+          </div>
+
+         
+
+          <div class="form-field">
+
+            <label for="date-revision">
+              Fecha de Revisión
+            </label>
+
+            <input
+              id="date-revision"
+              type="date"
+              formControlName="date_revision"
+              [class.invalid]="revisionInvalid"
+              [attr.aria-invalid]="revisionInvalid"
+            />
+
+            <div
+              class="field-error"
+              *ngIf="revisionInvalid"
+              role="alert">
+
+              <span *ngIf="revisionControl.hasError('required')">
+                La fecha de revisión es obligatoria.
+              </span>
+
+              <span *ngIf="form.hasError('invalidRevisionDate')">
+                La fecha de revisión debe ser exactamente
+                un año posterior a la fecha de liberación.
+              </span>
+
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="isSaving"
+            (click)="resetForm()">
+            Reiniciar
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="
+              form.invalid ||
+              form.pending ||
+              isSaving ||
+              isLoading ||
+              productNotFound
+            "
+            >
+            {{
+              isSaving
+                ? 'Guardando...'
+                : isEditMode
+                  ? 'Actualizar'
+                  : 'Agregar'
+            }}
+          </button>
+        </div>
+
+        <div class="back-link">
+          <a routerLink="/products">
+            Volver al listado
+          </a>
+        </div>
+
+        <app-confirm-dialog
+          [visible]="showSuccessDialog"
+          [title]="
+            isEditMode
+              ? '¡Producto actualizado!'
+              : '¡Producto registrado!'
+          "
+          [message]="successMessage"
+          (confirmed)="closeSuccessDialog()">
+        </app-confirm-dialog>
+
+      </form>
+
+    </div>
+
+  </main>
+
+</div>
+
+</div>

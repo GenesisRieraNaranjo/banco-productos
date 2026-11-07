@@ -1,0 +1,344 @@
+<div class="products-page">
+
+  <header class="page-header">
+
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">▣</span>
+      <span>BANCO</span>
+    </div>
+
+  </header>
+
+  <main class="page-content">
+
+    <!-- BARRA DE HERRAMIENTAS -->
+
+    <div class="toolbar">
+
+      <input
+        type="search"
+        class="search-input"
+        placeholder="Buscar productos..."
+        aria-label="Buscar productos financieros"
+        [value]="searchTerm"
+        (input)="onSearch($event)"
+      />
+
+      <a
+        class="btn btn-primary"
+        routerLink="/products/new">
+        Agregar
+      </a>
+
+    </div>
+
+
+    <div
+      *ngIf="errorMessage"
+      class="error-message"
+      role="alert">
+
+      {{ errorMessage }}
+
+      <button
+        type="button"
+        (click)="loadProducts()">
+        Reintentar
+      </button>
+
+    </div>
+
+    <!-- TABLA -->
+
+    <div class="table-container">
+
+      <table
+        class="products-table"
+        [attr.aria-busy]="isLoading">
+
+        <thead>
+          <tr>
+            <th>Logo</th>
+            <th>Nombre del producto</th>
+            <th>Descripción</th>
+            <th>Fecha de liberación</th>
+            <th>Fecha de revisión</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <ng-container *ngIf="!isLoading">
+
+            <tr
+              *ngFor="
+                let product of paginatedProducts;
+                trackBy: trackById
+              ">
+
+              <!-- LOGO -->
+
+              <td>
+                <img
+                  *ngIf="product.logo"
+                  class="product-logo"
+                  [src]="product.logo"
+                  [alt]="'Logo de ' + product.name"
+                />
+              </td>
+
+              <!-- NOMBRE -->
+
+              <td>
+                {{ product.name }}
+              </td>
+
+              <!-- DESCRIPCIÓN -->
+
+              <td>
+                {{ product.description }}
+              </td>
+
+              <!-- FECHA LIBERACIÓN -->
+
+              <td>
+                {{ product.date_release | date:'dd/MM/yyyy':'UTC' }}
+              </td>
+
+              <!-- FECHA REVISIÓN -->
+
+              <td>
+                {{ product.date_revision | date:'dd/MM/yyyy':'UTC' }}
+              </td>
+
+              <!-- ACCIONES -->
+
+              <td class="actions-cell">
+
+                <button
+                  type="button"
+                  class="menu-button"
+                  aria-label="Opciones del producto"
+                  aria-haspopup="menu"
+                  [attr.aria-expanded]="openedMenuId === product.id"
+                  (click)="toggleMenu(product.id)">
+
+                  ⋮
+
+                </button>
+
+                <div
+                  *ngIf="openedMenuId === product.id"
+                  class="dropdown-menu"
+                  role="menu">
+
+                  <a [routerLink]="['/products/edit', product.id]"
+                  (click)="closeMenu()">
+                    Editar
+                  </a>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    (click)="openDeleteModal(product)">
+
+                    Eliminar
+
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            <!-- SIN RESULTADOS -->
+
+            <tr *ngIf="paginatedProducts.length === 0">
+
+              <td colspan="6" class="empty-state">
+                No se encontraron productos financieros.
+              </td>
+
+            </tr>
+
+          </ng-container>
+
+          <!-- SKELETON LOADING -->
+
+          <ng-container *ngIf="isLoading">
+
+            <tr
+              *ngFor="let row of skeletonRows"
+              class="skeleton-row"
+              aria-hidden="true">
+
+              <!-- LOGO -->
+              <td>
+                <div class="skeleton skeleton-logo"></div>
+              </td>
+
+              <!-- NOMBRE -->
+              <td>
+                <div class="skeleton skeleton-name"></div>
+              </td>
+
+              <!-- DESCRIPCIÓN -->
+              <td>
+                <div class="skeleton skeleton-description"></div>
+                <div class="skeleton skeleton-description-short"></div>
+              </td>
+
+              <!-- FECHA LIBERACIÓN -->
+              <td>
+                <div class="skeleton skeleton-date"></div>
+              </td>
+
+              <!-- FECHA REVISIÓN -->
+              <td>
+                <div class="skeleton skeleton-date"></div>
+              </td>
+
+              <!-- ACCIONES -->
+              <td>
+                <div class="skeleton skeleton-action"></div>
+              </td>
+
+            </tr>
+
+          </ng-container>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- PAGINACIÓN -->
+
+    <footer
+      class="table-footer"
+      *ngIf="!isLoading">
+
+      <span>
+        {{ filteredProducts.length }} resultados
+      </span>
+
+      <div class="pagination">
+
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="changePage(currentPage - 1)">
+
+          Anterior
+
+        </button>
+
+        <span>
+          {{ currentPage }} / {{ totalPages }}
+        </span>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="changePage(currentPage + 1)">
+
+          Siguiente
+
+        </button>
+
+      </div>
+
+      <select
+        aria-label="Registros por página"
+        [value]="pageSize"
+        (change)="onPageSizeChange($event)">
+
+        <option [value]="5">5</option>
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+
+      </select>
+
+    </footer>
+
+  </main>
+
+  <!-- MODAL DE CONFIRMACIÓN -->
+
+  <div
+    *ngIf="selectedProduct"
+    class="modal-overlay">
+
+    <div
+      class="modal-container"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-modal-title">
+
+      <div class="modal-body">
+
+        <h3 id="delete-modal-title">
+        ¿Eliminar producto?
+      </h3>
+
+      <p>
+        Estás a punto de eliminar
+        <strong>{{ selectedProduct.name }}</strong>.
+      </p>
+
+      <p>
+        Esta acción es permanente y no se puede deshacer.
+      </p>
+
+      </div>
+
+      <div
+        *ngIf="deleteErrorMessage"
+        class="error-message"
+        role="alert">
+
+        {{ deleteErrorMessage }}
+
+      </div>
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="isDeleting"
+          (click)="closeDeleteModal()">
+
+          Cancelar
+
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="isDeleting"
+          (click)="confirmDelete()">
+
+          {{ isDeleting ? 'Eliminando...' : 'Confirmar' }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- DIÁLOGO DE ELIMINACIÓN EXITOSA -->
+
+<app-confirm-dialog
+  [visible]="showSuccessDialog"
+  title="¡Producto eliminado!"
+  [message]="successMessage"
+  (confirmed)="closeSuccessDialog()">
+</app-confirm-dialog>
+
+</div>
